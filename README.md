@@ -300,6 +300,6 @@ MIT — free to use, modify, and distribute. See [LICENSE](LICENSE) for the full
 ## Author
 
 **Wajahat Bashir**  
-Email: wajahat449@gmail.com  
+Email: wajahat.bashir786@gmail.com  
 GitHub: [wajahatbashir](https://github.com/wajahatbashir)  
 Repository: [wajahatbashir/PriceSlider](https://github.com/wajahatbashir/PriceSlider)
