@@ -1,19 +1,27 @@
 {
     "name": "wb/price-slider",
-    "description": "A custom price slider module for Magento 2 allowing customers to filter products by price on the category page.",
+    "description": "Magento 2 Price Slider module — draggable price-range filter for category pages with full multi-store, multi-currency, and BSS MultiStoreViewPricing support.",
     "type": "magento2-module",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "license": "MIT",
     "authors": [
         {
             "name": "Wajahat Bashir",
-            "email": "wajahat@example.com",
+            "email": "wajahat.bashir786@gmail.com",
             "role": "Developer"
         }
     ],
     "require": {
-        "php": "~7.4.0||~8.1.0",
-        "magento/framework": "^102.0|^103.0"
+        "php": "~7.4.0||~8.1.0||~8.2.0||~8.3.0",
+        "magento/framework": "^102.0|^103.0",
+        "magento/module-catalog": "*",
+        "magento/module-store": "*",
+        "magento/module-directory": "*",
+        "magento/module-customer": "*"
+    },
+    "suggest": {
+        "bss-commerce/m2-multi-store-view-pricing": "Enables per-store-view base currency pricing (catalog_product_index_price_store table).",
+        "bss-commerce/m2-pre-order": "Enables 3-tier stock sort: In Stock > Pre-order/Made-to-Order > Out of Stock."
     },
     "autoload": {
         "files": [

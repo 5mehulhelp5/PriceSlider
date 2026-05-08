@@ -1,6 +1,15 @@
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework/ObjectManager/etc/config.xsd">
-    <type name="Magento\Catalog\Model\Layer\Filter\Price">
-        <plugin name="wb_priceslider_filter" type="WB\PriceSlider\Plugin\PriceFilterPlugin" />
-    </type>
+<!--
+    The price-filter plugin (wb_priceslider_filter) has been removed.
+    Reason: It applied addFieldToFilter('price', ...) and then called $proceed(),
+    causing the native Magento/BSS filter to run a second time on the same
+    request parameter — double-filtering products incorrectly.
+
+    Price filtering is now handled by the native Magento layer filter pipeline.
+    BSS MultiStoreViewPricing's preference for CatalogSearch\Layer\Filter\Price
+    already routes the ?price=min-max parameter against the correct price index
+    table (catalog_product_index_price_store when BSS store-level pricing is on).
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework/ObjectManager/etc/config.xsd">
 </config>

@@ -1,188 +1,349 @@
 <?php
+declare(strict_types=1);
+
 namespace WB\PriceSlider\Block;
 
-use Magento\Framework\View\Element\Template;
+use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\Directory\Model\CurrencyFactory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\View\Element\Template;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use WB\PriceSlider\Model\PriceRange;
 
 class Slider extends Template
 {
-    protected $layerResolver;
-    protected $currencyFactory;
-    protected $scopeConfig;
-    protected $storeManager;
+    /**
+     * @var Resolver
+     */
+    private $layerResolver;
 
     /**
-     * Constructor method to initialize dependencies
+     * @var CurrencyFactory
      */
+    private $currencyFactory;
+
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
+    /**
+     * @var PriceRange
+     */
+    private $priceRange;
+
+    /**
+     * @var ResourceConnection
+     */
+    private $resourceConnection;
+
+    /**
+     * @var array|null
+     */
+    private $rangeCache = null;
+
+    /**
+     * @var float|null
+     */
+    private $rateCache = null;
+
     public function __construct(
         Template\Context $context,
         Resolver $layerResolver,
         CurrencyFactory $currencyFactory,
         ScopeConfigInterface $scopeConfig,
-        StoreManagerInterface $storeManager, 
+        StoreManagerInterface $storeManager,
+        PriceRange $priceRange,
+        ResourceConnection $resourceConnection,
         array $data = []
     ) {
-        $this->layerResolver = $layerResolver;
-        $this->currencyFactory = $currencyFactory;
-        $this->scopeConfig = $scopeConfig;
-        $this->storeManager = $storeManager;
+        $this->layerResolver      = $layerResolver;
+        $this->currencyFactory    = $currencyFactory;
+        $this->scopeConfig        = $scopeConfig;
+        $this->storeManager       = $storeManager;
+        $this->priceRange         = $priceRange;
+        $this->resourceConnection = $resourceConnection;
         parent::__construct($context, $data);
     }
 
     /**
-     * Determines if the price slider should be displayed based on store configuration
-     * 
      * @return bool
      */
-    public function canShowSlider()
+    public function canShowSlider(): bool
     {
         return $this->scopeConfig->isSetFlag(
             'wb_priceslider/general/enable',
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+            ScopeInterface::SCOPE_STORE
         );
     }
 
     /**
-     * Calculates the minimum price from the entire category
-     * 
+     * Minimum price in BASE currency (what the price index stores).
+     *
      * @return float
      */
-    public function getMinPrice()
+    public function getBaseMinPrice(): float
     {
-        $productCollection = $this->getCategoryProductCollection();
-        $minPrice = PHP_INT_MAX;
-
-        foreach ($productCollection as $product) {
-            $price = $this->formatPrice($product->getPrice());
-            if ($price > 0 && $price < $minPrice) {
-                $minPrice = $price;
-            }
-        }
-
-        if ($minPrice === PHP_INT_MAX) {
-            $minPrice = 0;
-        }
-
-        return $this->convertPrice($minPrice);
+        return $this->fetchRange()['min'];
     }
 
     /**
-     * Calculates the maximum price from the entire category
-     * 
+     * Maximum price in BASE currency.
+     *
      * @return float
      */
-    public function getMaxPrice()
+    public function getBaseMaxPrice(): float
     {
-        $productCollection = $this->getCategoryProductCollection();
-        $maxPrice = 0;
-
-        foreach ($productCollection as $product) {
-            $price = $this->formatPrice($product->getPrice());
-            if ($price > $maxPrice) {
-                $maxPrice = $price;
-            }
-        }
-
-        return $this->convertPrice($maxPrice);
+        return $this->fetchRange()['max'];
     }
 
     /**
-     * Retrieves the entire product collection for the current category
-     * 
-     * @return \Magento\Catalog\Model\ResourceModel\Product\Collection
-     */
-    protected function getCategoryProductCollection()
-    {
-        $layer = $this->layerResolver->get();
-        $category = $layer->getCurrentCategory();
-        $storeId = $this->storeManager->getStore()->getId(); // Get the current store ID
-
-        // Fetch the product collection for the current category
-        $productCollection = $category->getProductCollection();
-        $productCollection->addAttributeToSelect('price');
-        $productCollection->addFinalPrice(); // Ensure final price including discounts is used
-        $productCollection->setStoreId($storeId); // Filter by the current store ID
-        $productCollection->addStoreFilter($storeId); // Ensure filtering only by the current store
-        $productCollection->setPageSize(0); // Ensure all products are loaded
-        $productCollection->setCurPage(1); // Start from the first page
-
-        // Exclude products with zero price
-        $productCollection->addAttributeToFilter('price', ['gt' => 0]);
-
-        // Reset any potential filters or limitations
-        $productCollection->clear();
-        $productCollection->getSelect()->reset(\Zend_Db_Select::LIMIT_COUNT);
-        $productCollection->getSelect()->reset(\Zend_Db_Select::LIMIT_OFFSET);
-
-        // For debugging: output product data to ensure proper store filtering
-        /* ($productCollection as $product) {
-            echo "Store ID: " . $storeId . "<br>";
-            echo "Product ID: " . $product->getId() . "<br>";
-            echo "Product Price: " . $product->getPrice() . "<br>";
-            echo "Final Price: " . $product->getFinalPrice() . "<br><br>";
-        }*/
-
-        return $productCollection;
-    }
-
-
-    /**
-     * Converts a price to the store's base currency if necessary
-     * 
-     * @param float $price
+     * Minimum price in DISPLAY currency (shown to user).
+     *
      * @return float
      */
-    protected function convertPrice($price)
+    public function getDisplayMinPrice(): float
     {
-        $currentCurrencyCode = $this->storeManager->getStore()->getCurrentCurrencyCode();
-        $baseCurrencyCode = $this->storeManager->getStore()->getBaseCurrencyCode();
-        
-        if ($currentCurrencyCode !== $baseCurrencyCode) {
-            $rate = $this->currencyFactory->create()->load($baseCurrencyCode)->getRate($currentCurrencyCode);
-            if ($rate) {
-                $price = $price / $rate; // Convert price to the base currency
-            }
-        }
-
-        return $this->formatPrice($price);
+        return round($this->getBaseMinPrice() * $this->getCurrencyRate(), 2);
     }
 
     /**
-     * Retrieves the currency symbol for the current store
-     * 
+     * Maximum price in DISPLAY currency (shown to user).
+     *
+     * @return float
+     */
+    public function getDisplayMaxPrice(): float
+    {
+        return round($this->getBaseMaxPrice() * $this->getCurrencyRate(), 2);
+    }
+
+    /**
+     * Currently selected min from URL ?price=min-max, in BASE currency.
+     * Falls back to category min when no filter is active.
+     *
+     * @return float
+     */
+    public function getSelectedBaseMin(): float
+    {
+        $parts = $this->parsePriceParam();
+        return $parts !== null ? $parts[0] : $this->getBaseMinPrice();
+    }
+
+    /**
+     * Currently selected max from URL, in BASE currency.
+     *
+     * @return float
+     */
+    public function getSelectedBaseMax(): float
+    {
+        $parts = $this->parsePriceParam();
+        return $parts !== null ? $parts[1] : $this->getBaseMaxPrice();
+    }
+
+    /**
+     * Selected min converted to display currency.
+     *
+     * @return float
+     */
+    public function getSelectedDisplayMin(): float
+    {
+        return round($this->getSelectedBaseMin() * $this->getCurrencyRate(), 2);
+    }
+
+    /**
+     * Selected max converted to display currency.
+     *
+     * @return float
+     */
+    public function getSelectedDisplayMax(): float
+    {
+        return round($this->getSelectedBaseMax() * $this->getCurrencyRate(), 2);
+    }
+
+    /**
+     * Exchange rate: display currency units per 1 base currency unit.
+     * Returns 1.0 when base === display (typical per-store setup with BSS MultiStoreViewPricing).
+     *
+     * @return float
+     */
+    public function getCurrencyRate(): float
+    {
+        if ($this->rateCache !== null) {
+            return $this->rateCache;
+        }
+
+        try {
+            $store       = $this->storeManager->getStore();
+            $baseCode    = $store->getBaseCurrencyCode();
+            $displayCode = $store->getCurrentCurrencyCode();
+
+            if ($baseCode === $displayCode) {
+                $this->rateCache = 1.0;
+            } else {
+                $rate = $this->currencyFactory->create()->load($baseCode)->getRate($displayCode);
+                $this->rateCache = ($rate && $rate > 0) ? (float)$rate : 1.0;
+            }
+        } catch (\Exception $e) {
+            $this->rateCache = 1.0;
+        }
+
+        return $this->rateCache;
+    }
+
+    /**
+     * Display currency symbol (e.g. "Rs", "$").
+     *
      * @return string
      */
-    public function getCurrencySymbol()
+    public function getCurrencySymbol(): string
     {
-        $currencyCode = $this->storeManager->getStore()->getCurrentCurrencyCode();
-        $currency = $this->currencyFactory->create()->load($currencyCode);
-        return $currency->getCurrencySymbol();
+        try {
+            $store  = $this->storeManager->getStore();
+            $code   = $store->getCurrentCurrencyCode();
+            $symbol = (string)$this->currencyFactory->create()->load($code)->getCurrencySymbol();
+            // getCurrencySymbol() returns empty or just the code for some currencies (e.g. PKR).
+            // Fall back to the currency code so something meaningful always displays.
+            return ($symbol && $symbol !== $code) ? $symbol : $code;
+        } catch (\Exception $e) {
+            return '';
+        }
     }
 
     /**
-     * Formats the price to two decimal places and rounds it
-     * 
-     * @param float $price
-     * @return float
+     * Slider step in display currency units (admin-configurable, minimum 1).
+     *
+     * @return int
      */
-    protected function formatPrice($price)
+    public function getSliderStep(): int
     {
-        return round($price, 2); // Ensure the price is rounded to 2 decimal places
+        $step = (int)$this->scopeConfig->getValue(
+            'wb_priceslider/general/step',
+            ScopeInterface::SCOPE_STORE
+        );
+        return max(1, $step);
     }
 
     /**
-     * Controls whether the HTML of the block should be rendered
-     * 
+     * Whether a price filter is currently applied via URL.
+     *
+     * @return bool
+     */
+    public function isPriceFilterActive(): bool
+    {
+        return (bool)$this->_request->getParam('price');
+    }
+
+    /**
      * @return string
      */
-    protected function _toHtml()
+    protected function _toHtml(): string
     {
         if (!$this->canShowSlider()) {
-            return ''; // Do not render if the slider is disabled
+            return '';
         }
+
+        $min = $this->getBaseMinPrice();
+        $max = $this->getBaseMaxPrice();
+
+        // Do not render if the category has no priced products or flat distribution
+        if ($max <= 0 || $min >= $max) {
+            return '';
+        }
+
         return parent::_toHtml();
+    }
+
+    /**
+     * Parse ?price=min-max from the current request.
+     * Returns [minBase, maxBase] floats or null when absent/invalid.
+     *
+     * @return float[]|null
+     */
+    private function parsePriceParam(): ?array
+    {
+        $param = (string)$this->_request->getParam('price', '');
+        if ($param === '') {
+            return null;
+        }
+
+        $parts = explode('-', $param);
+        if (count($parts) !== 2 || !is_numeric($parts[0]) || !is_numeric($parts[1])) {
+            return null;
+        }
+
+        $min = max(0.0, (float)$parts[0]);
+        $max = (float)$parts[1];
+
+        return ($max > $min) ? [$min, $max] : null;
+    }
+
+    /**
+     * Fetch and internally cache the base-currency price range for the current category.
+     *
+     * @return array ['min' => float, 'max' => float]
+     */
+    private function fetchRange(): array
+    {
+        if ($this->rangeCache !== null) {
+            return $this->rangeCache;
+        }
+
+        try {
+            $layer    = $this->layerResolver->get();
+            $category = $layer->getCurrentCategory();
+
+            if (!$category || !$category->getId()) {
+                $this->rangeCache = ['min' => 0.0, 'max' => 0.0];
+                return $this->rangeCache;
+            }
+
+            $descendantIds    = $this->getDescendantCategoryIds($category);
+            $this->rangeCache = $this->priceRange->getRangeForCategory(
+                (int)$category->getId(),
+                $descendantIds
+            );
+        } catch (\Exception $e) {
+            $this->rangeCache = ['min' => 0.0, 'max' => 0.0];
+        }
+
+        return $this->rangeCache;
+    }
+
+    /**
+     * Return IDs of the category and all its descendants.
+     * For non-anchor categories only the given category ID is returned.
+     *
+     * @param Category $category
+     * @return int[]
+     */
+    private function getDescendantCategoryIds(Category $category): array
+    {
+        $ids = [(int)$category->getId()];
+
+        if (!$category->getIsAnchor()) {
+            return $ids;
+        }
+
+        try {
+            $connection = $this->resourceConnection->getConnection();
+            $table      = $this->resourceConnection->getTableName('catalog_category_entity');
+            $select     = $connection->select()
+                ->from($table, ['entity_id'])
+                ->where('path LIKE ?', $category->getPath() . '/%');
+            $childIds   = $connection->fetchCol($select);
+            $ids        = array_merge($ids, array_map('intval', $childIds));
+        } catch (\Exception $e) {
+            // returns only the current category ID
+        }
+
+        return $ids;
     }
 }

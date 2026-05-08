@@ -1,16 +1,66 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="urn:magento:framework:Config/etc/system_file.xsd">
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
-        <section id="wb_priceslider" translate="label" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>Price Slider Settings</label>
-            <tab>jaipurandco</tab>
+        <section id="wb_priceslider"
+                 translate="label"
+                 sortOrder="10"
+                 showInDefault="1"
+                 showInWebsite="1"
+                 showInStore="1">
+            <label>Price Slider</label>
+            <tab>wajahatbashir</tab>
             <resource>WB_PriceSlider::config</resource>
-            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+
+            <group id="general"
+                   translate="label"
+                   type="text"
+                   sortOrder="10"
+                   showInDefault="1"
+                   showInWebsite="1"
+                   showInStore="1">
                 <label>General Settings</label>
-                <field id="enable" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+
+                <field id="enable"
+                       translate="label"
+                       type="select"
+                       sortOrder="10"
+                       showInDefault="1"
+                       showInWebsite="1"
+                       showInStore="1">
                     <label>Enable Price Slider</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Show a draggable price-range slider in the category sidebar.</comment>
+                </field>
+
+                <field id="sort_by_stock"
+                       translate="label"
+                       type="select"
+                       sortOrder="20"
+                       showInDefault="1"
+                       showInWebsite="1"
+                       showInStore="1">
+                    <label>Sort Products by Stock Availability</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Order: 1) In Stock  2) Pre-order / Made to Order  3) Out of Stock. Requires BSS PreOrder for the 3-tier sort; falls back to binary In/Out otherwise.</comment>
+                    <depends>
+                        <field id="enable">1</field>
+                    </depends>
+                </field>
+
+                <field id="step"
+                       translate="label"
+                       type="text"
+                       sortOrder="30"
+                       showInDefault="1"
+                       showInWebsite="1"
+                       showInStore="1">
+                    <label>Slider Step (display currency units)</label>
+                    <comment>Minimum drag increment. Use 1 for whole-number currencies; increase for high-value currencies to reduce the number of handle positions.</comment>
+                    <validate>required-entry validate-greater-than-zero validate-digits</validate>
+                    <depends>
+                        <field id="enable">1</field>
+                    </depends>
                 </field>
             </group>
         </section>

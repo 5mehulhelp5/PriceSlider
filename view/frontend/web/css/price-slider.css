@@ -1,2 +1,161 @@
-#price-slider {
+/* ============================================================
+   WB Price Slider — frontend styles
+   All class names are prefixed .wb-ps- to avoid collisions.
+   ============================================================ */
+
+/* Wrapper */
+.wb-price-slider-wrap {
+    padding: 15px 15px 18px;
+    margin-bottom: 16px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+}
+
+/* Header row (title + optional clear link) */
+.wb-ps-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.wb-ps-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #333;
+}
+
+.wb-ps-clear-link {
+    font-size: 12px;
+    color: #999;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.wb-ps-clear-link:hover {
+    color: #e02b27;
+    text-decoration: underline;
+}
+
+/* Amount labels */
+.wb-ps-amounts {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 15px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #222;
+}
+
+.wb-ps-separator {
+    color: #aaa;
+    font-weight: 400;
+}
+
+.wb-ps-symbol {
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 3px;
+    opacity: 0.65;
+    letter-spacing: 0;
+}
+
+/* jQuery UI slider track */
+.wb-ps-slider.ui-slider {
+    position: relative;
+    height: 6px;
+    background: #e8e8e8;
+    border: none;
+    border-radius: 3px;
+    /* bottom margin must clear handle overflow: handle extends 9px below track bottom,
+       so margin-bottom > 9px is required. 22px gives ~13px visual gap before range labels. */
+    margin: 6px 10px 22px;
+    cursor: pointer;
+    overflow: visible;
+    z-index: 1;
+}
+
+.wb-ps-slider .ui-slider-range {
+    background: #c8a96e;
+    border-radius: 3px;
+}
+
+.wb-ps-slider .ui-slider-handle {
+    top: -9px;
+    width: 24px;
+    height: 24px;
+    background: #fff;
+    border: 2.5px solid #c8a96e;
+    border-radius: 50%;
+    cursor: grab;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.wb-ps-slider .ui-slider-handle:hover,
+.wb-ps-slider .ui-slider-handle:focus {
+    border-color: #a07840;
+    box-shadow: 0 0 0 4px rgba(200, 169, 110, 0.20);
+}
+
+.wb-ps-slider .ui-slider-handle:active {
+    cursor: grabbing;
+    border-color: #7a5c2e;
+    box-shadow: 0 0 0 5px rgba(200, 169, 110, 0.15);
+}
+
+/* Full-range boundary labels below the track */
+.wb-ps-range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 10px 12px;
+    font-size: 11px;
+    color: #bbb;
+    line-height: 1;
+}
+
+/* Apply button */
+.wb-ps-actions {
+    margin-top: 14px;
+}
+
+.wb-ps-apply {
+    display: block;
+    width: 100%;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    color: #fff;
+    background: #333;
+    border: 1px solid #333;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.wb-ps-apply:hover {
+    background: #555;
+    border-color: #555;
+}
+
+.wb-ps-apply:active {
+    background: #111;
+    border-color: #111;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .wb-price-slider-wrap {
+        padding: 12px;
+    }
 }

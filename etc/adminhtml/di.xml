@@ -1,11 +1,8 @@
 <?xml version="1.0"?>
+<!--
+    ACL resources are now defined in etc/acl.xml (proper Magento convention).
+    This file is intentionally empty; kept for compatibility.
+-->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework/ObjectManager/etc/config.xsd">
-    <type name="Magento\Framework\Acl\LoaderInterface">
-        <arguments>
-            <argument name="resources" xsi:type="array">
-                <item name="WB_PriceSlider::config" xsi:type="string">Magento_Backend::stores</item>
-            </argument>
-        </arguments>
-    </type>
 </config>

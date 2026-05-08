@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <!--
+        Fires before a product collection loads on category pages.
+        Adds stock-status-based sorting: In Stock → Pre-order → Out of Stock.
+    -->
+    <event name="catalog_product_collection_load_before">
+        <observer name="wb_priceslider_sort_by_stock"
+                  instance="WB\PriceSlider\Observer\SortProductsByStock"/>
+    </event>
+</config>

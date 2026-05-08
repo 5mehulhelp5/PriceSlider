@@ -1,18 +1,16 @@
 <?xml version="1.0"?>
-<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <!-- Load price-slider CSS from the module's web/css directory -->
+        <css src="WB_PriceSlider::css/price-slider.css"/>
+    </head>
     <body>
         <referenceContainer name="sidebar.main">
-            <!-- Include the price slider block -->
-            <block class="WB\PriceSlider\Block\Slider" name="price.slider" template="WB_PriceSlider::slider.phtml" after="catalog.leftnav">
-                <arguments>
-                    <argument name="jsLayout" xsi:type="array">
-                        <item name="component" xsi:type="string">Magento_Ui/js/core/app</item>
-                        <item name="deps" xsi:type="array">
-                            <item name="0" xsi:type="string">WB_PriceSlider/js/price-slider</item>
-                        </item>
-                    </argument>
-                </arguments>
-            </block>
+            <block class="WB\PriceSlider\Block\Slider"
+                   name="wb.price.slider"
+                   template="WB_PriceSlider::slider.phtml"
+                   after="catalog.leftnav"/>
         </referenceContainer>
     </body>
 </page>
